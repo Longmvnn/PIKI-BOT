@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piki Delivery Call Centre</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    if (typeof Chart === "undefined") {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>');
+    }
+  </script>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="env.js"></script>
+</head>
+<body>
+  <div id="chartLibraryWarning" class="chart-warning" hidden>
+    Charts unavailable — Chart.js failed to load. Check your internet connection.
+  </div>
+  <section class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-brand"><span class="brand-mark">P</span><div><strong>Piki Report Centre</strong><small>Secure reporting portal</small></div></div>
+      <div><p class="eyebrow">Account access</p><h1>Welcome back.</h1><p>Sign in to open the reporting dashboard.</p></div>
+      <form id="loginForm">
+        <label>Piki Email<input id="loginUsername" type="email" autocomplete="username" placeholder="name@piki.co.tz" required></label>
+        <label>Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password" required></label>
+        <label id="loginConfirmLabel" class="role-hidden">Confirm New Password<input id="loginPasswordConfirm" type="password" autocomplete="new-password" placeholder="Confirm password"></label>
+        <button class="primary-btn" type="submit">Sign In</button>
+        <small class="login-help" id="loginHelp">Only approved users with an Admin-created password can sign in.</small>
+        <span class="form-error" id="loginError"></span>
+      </form>
+    </div>
+  </section>
+  <header class="topbar">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Open navigation">☰</button>
+    <a class="brand" href="#dashboard"><span class="brand-mark">P</span><span>Piki Report Centre</span></a>
+    <div class="account-menu"><span id="accountLabel">Signed out</span><button class="secondary-btn" id="logoutButton" type="button">Log out</button></div>
+  </header>
+
+  <aside class="side-nav" id="sideNav" aria-label="Main navigation">
+    <a class="side-brand" href="#dashboard"><span class="brand-mark">P</span><strong>Piki Report Centre</strong><small>Operations reporting</small></a>
+    <nav class="side-menu">
+      <details open>
+        <summary>Reporting</summary>
+        <button class="tab active" data-page="dashboard" type="button">Dashboard</button>
+        <button class="tab" data-page="qualitative" type="button">Qualitative Notes</button>
+        <button class="tab" data-page="weekly" type="button">Weekly Report</button>
+        <button class="tab" data-page="monthly" type="button">Monthly Report</button>
+        <button class="tab csv-access" data-page="linkus-import" type="button">CSV Analytics</button>
+      </details>
+      <details class="admin-only" open>
+        <summary>Imports</summary>
+        <button class="tab" data-page="import-center" type="button">Import Centre</button>
+        <button class="tab import-jump" data-page="import-center" data-focus="cdr" type="button">CDR CSV Upload</button>
+        <button class="tab import-jump" data-page="import-center" data-focus="timetable" type="button">Timetable Upload</button>
+        <button class="tab import-jump" data-page="import-center" data-focus="failed-orders" type="button">Failed Orders Report Upload</button>
+      </details>
+      <details open>
+        <summary>Archive</summary>
+        <button class="tab" data-page="archive" data-archive-folder="home" type="button">Archive Home</button>
+        <button class="tab" data-page="archive" data-archive-folder="source" type="button">Imported Files</button>
+        <button class="tab" data-page="archive" data-archive-folder="weekly-pptx" type="button">Weekly PPTX Files</button>
+        <button class="tab" data-page="archive" data-archive-folder="monthly-pptx" type="button">Monthly PPTX Files</button>
+        <button class="tab" data-page="archive" data-archive-folder="reports" type="button">Generated Reports</button>
+        <button class="tab admin-only" data-page="archive" data-archive-folder="deleted" type="button">Deleted Files</button>
+      </details>
+      <details class="admin-only" open>
+        <summary>Admin</summary>
+        <button class="tab" data-page="settings" type="button">Users & Access</button>
+        <button class="tab" data-page="settings" type="button">Settings</button>
+        <button class="tab logout-tab" id="sidebarLogout" type="button">Logout</button>
+      </details>
+    </nav>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <main>
+    <section class="page active" id="dashboard">
+      <div class="hero"><div><p class="eyebrow">Operations command centre</p><h1>Dashboard</h1><p>Quick access to reporting, imports, analytics, and archive filing.</p></div></div>
+      <div class="dashboard-home-grid" id="dashboardHome"></div>
+    </section>
+
+    <section class="page" id="qualitative">
+      <div class="hero"><div><p class="eyebrow">User input</p><h1>Qualitative Notes</h1><p>Record the operational context that should flow into weekly, monthly, AI, and PPTX reporting.</p></div></div>
+      <form id="qualitativeForm">
+        <div class="panel input-strip">
+          <label>Date<input id="noteDate" type="date" required></label>
+          <label>Shift<select id="noteShift"><option>Morning Shift</option><option>Evening Shift</option></select></label>
+          <label>Report Owner<select id="noteCoordinator"></select></label>
+        </div>
+        <div class="panel notes-panel qualitative-notes-panel">
+          <label>What shaped today's performance?<textarea id="qualitativeNotes" rows="4"></textarea></label>
+          <label>Context / Issues<textarea id="qualContextIssues" rows="4"></textarea></label>
+          <label>Problematic Drivers<textarea id="qualProblematicDrivers" rows="4"></textarea></label>
+          <label>Discount Coupons<textarea id="qualDiscountCoupons" rows="4"></textarea></label>
+          <label>Pre Orders<textarea id="qualPreOrders" rows="4"></textarea></label>
+          <button class="primary-btn" type="submit">Save Qualitative Notes</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="page" id="weekly">
+      <div class="hero">
+        <div><p class="eyebrow">Live slide studio</p><h1>Weekly Report & PPTX Engine</h1><p>CDR, failed orders, timetable assignments, and qualitative notes combine here.</p></div>
+        <div class="score-card compact"><span>Weekly grade</span><strong id="weeklyGrade">A</strong><small id="weeklyScore">100 / 100</small></div>
+      </div>
+      <div class="panel linkus-filter-panel admin-only" data-filter-scope="weekly">
+        <div><p class="eyebrow">Linkus extraction</p><h2>Weekly Data Filter</h2><span>Date and time filters work independently.</span></div>
+        <label>Start Date<input class="filter-start-date" type="date"></label>
+        <label>End Date<input class="filter-end-date" type="date"></label>
+        <button class="primary-btn apply-date-filter" type="button">Filter by Date</button>
+        <label>Start Time<input class="filter-start-time" type="time"></label>
+        <label>End Time<input class="filter-end-time" type="time"></label>
+        <button class="secondary-btn apply-time-filter" type="button">Filter by Time</button>
+        <button class="dark-btn manual-entry" type="button">Manual Entry</button>
+      </div>
+      <div class="panel data-flow-bar" data-scope="weekly">
+        <div><p class="eyebrow">CSV, timetable, and failed-order entries</p><h2>Weekly Data Flow</h2><span class="pull-status" id="weeklyPullStatus">Calculated from approved source data</span></div>
+      </div>
+      <div class="panel input-strip" id="weeklyInputs">
+        <label>Week Reference<input id="weekRef" value=""></label>
+        <label>Start Date<input id="weekStart" type="date"></label>
+        <label>End Date<input id="weekEnd" type="date"></label>
+        <label>Total Calls<input id="wTotal" type="number"></label>
+        <label>Answered<input id="wAnswered" type="number"></label>
+        <label>Abandoned<input id="wAbandoned" type="number"></label>
+        <label>Missed<input id="wMissed" type="number"></label>
+        <label>Failed Orders<input id="wFailed" type="number"></label>
+        <label>SLA Average<input id="wSla" type="number"></label>
+        <label>Average AHT<input id="wAht" type="number"></label>
+        <label>Average Wait<input id="wWait" type="number"></label>
+        <label>Highest Max Wait<input id="wMaxWait" type="number"></label>
+      </div>
+      <div class="panel aggregation-summary" id="weeklyAggregationSummary"></div>
+      <div class="section-title"><div><p class="eyebrow">Safe charts</p><h2>Weekly Performance Charts</h2></div><button class="secondary-btn" id="refreshWeeklyCharts" type="button">Refresh Charts</button></div>
+      <div id="weeklyCharts" class="csv-visuals scope-charts"></div>
+      <div class="panel failed-orders-report"><div class="section-head"><div><p class="eyebrow">Imported orders + coordinator context</p><h2>Failed Orders Analysis</h2></div></div><div id="weeklyFailedOrdersAnalysis"></div></div>
+      <div class="report-order">
+        <div class="section-title"><div><p class="eyebrow">Cover + report sections 01–05</p><h2>Weekly PowerPoint-Style Report</h2></div></div>
+        <div class="slides" id="weeklySlides"></div>
+      </div>
+      <div class="studio-grid">
+        <div class="panel"><div class="section-head"><div><p class="eyebrow">Calculated automatically from CDR</p><h2>Top Agents</h2></div></div><div class="podium" id="weeklyPodium"></div><div class="leaderboard" id="weeklyBoard"></div></div>
+        <div class="panel"><div class="section-head"><div><p class="eyebrow">Timetable-mapped operational outcomes</p><h2>Top Coordinators</h2></div></div><div class="podium" id="weeklyCoordinatorPodium"></div><div class="leaderboard" id="weeklyCoordinators"></div></div>
+        <div class="panel insight-panel">
+          <div class="section-head"><div><p class="eyebrow">Editable analysis</p><h2>AI Insights & Recommendations</h2></div></div>
+          <div class="button-row"><button class="secondary-btn insight-action" data-scope="weekly" data-kind="insights">Generate Insights</button><button class="secondary-btn insight-action" data-scope="weekly" data-kind="recommendations">Generate Recommendations</button><button class="primary-btn insight-action" data-scope="weekly" data-kind="both">Generate Both</button><button class="dark-btn insight-action" data-scope="weekly" data-kind="both">Regenerate</button></div>
+          <label>Insights<textarea id="weeklyInsights" rows="5"></textarea></label>
+          <label>Recommendations<textarea id="weeklyRecommendations" rows="5"></textarea></label>
+        </div>
+      </div>
+      <div class="panel font-settings-panel" data-font-panel="weekly"></div>
+      <div class="section-title"><div><p class="eyebrow">Preview before download</p><h2>Weekly Save & Download Actions</h2></div><div class="button-row"><button class="secondary-btn" id="previewWeekly">Preview Weekly PPTX</button><button class="primary-btn" id="downloadWeekly">Download Weekly PPTX</button><button class="dark-btn" id="saveWeekly">Save Weekly Report</button></div></div>
+    </section>
+
+    <section class="page" id="monthly">
+      <div class="hero">
+        <div><p class="eyebrow">Executive reporting</p><h1>Monthly Executive Portal</h1><p>Weekly performance and qualitative context combined into presentation-ready reporting.</p></div>
+        <div class="health-card" id="monthHealth"><span>Month Health Status</span><strong>Successful Month</strong><small id="monthScore">100 / 100 · Grade A</small></div>
+      </div>
+      <div class="panel linkus-filter-panel admin-only" data-filter-scope="monthly">
+        <div><p class="eyebrow">Linkus extraction</p><h2>Monthly Data Filter</h2><span>Date and time filters work independently.</span></div>
+        <label>Start Date<input class="filter-start-date" type="date"></label>
+        <label>End Date<input class="filter-end-date" type="date"></label>
+        <button class="primary-btn apply-date-filter" type="button">Filter by Date</button>
+        <label>Start Time<input class="filter-start-time" type="time"></label>
+        <label>End Time<input class="filter-end-time" type="time"></label>
+        <button class="secondary-btn apply-time-filter" type="button">Filter by Time</button>
+        <button class="dark-btn manual-entry" type="button">Manual Entry</button>
+      </div>
+      <div class="panel data-flow-bar" data-scope="monthly">
+        <div><p class="eyebrow">CSV, timetable, and failed-order entries</p><h2>Monthly Data Flow</h2><span class="pull-status" id="monthlyPullStatus">Calculated from approved source data</span></div>
+      </div>
+      <div class="panel input-strip" id="monthlyInputs">
+        <label>Month Reference<input id="monthRef"></label>
+        <label>Total Calls<input id="mTotal" type="number"></label>
+        <label>Total Answered<input id="mAnswered" type="number"></label>
+        <label>Total Abandoned<input id="mAbandoned" type="number"></label>
+        <label>Total Missed<input id="mMissed" type="number"></label>
+        <label>Total Failed Orders<input id="mFailed" type="number"></label>
+        <label>Average AHT<input id="mAht" type="number"></label>
+        <label>Average Wait<input id="mWait" type="number"></label>
+        <label>SLA Average<input id="mSla" type="number"></label>
+        <label>Highest Max Wait<input id="mMaxWait" type="number"></label>
+      </div>
+      <div class="panel aggregation-summary" id="monthlyAggregationSummary"></div>
+      <div class="section-title"><div><p class="eyebrow">Safe charts</p><h2>Monthly Performance Charts</h2></div><button class="secondary-btn" id="refreshMonthlyCharts" type="button">Refresh Charts</button></div>
+      <div id="monthlyCharts" class="csv-visuals scope-charts"></div>
+      <div class="panel failed-orders-report"><div class="section-head"><div><p class="eyebrow">Imported orders + coordinator context</p><h2>Failed Orders Analysis</h2></div></div><div id="monthlyFailedOrdersAnalysis"></div></div>
+      <div class="report-order">
+        <div class="section-title"><div><p class="eyebrow">Cover + report sections 01–05</p><h2>Monthly PowerPoint-Style Report</h2></div></div>
+        <div class="slides" id="monthlySlides"></div>
+      </div>
+      <div class="studio-grid">
+        <div class="panel"><div class="section-head"><div><p class="eyebrow">Calculated automatically from CDR</p><h2>Top Agents</h2></div></div><div class="podium" id="monthlyPodium"></div><div class="leaderboard" id="monthlyBoard"></div></div>
+        <div class="panel"><div class="section-head"><div><p class="eyebrow">Timetable-mapped operational outcomes</p><h2>Top Coordinators</h2></div></div><div class="podium" id="monthlyCoordinatorPodium"></div><div class="leaderboard" id="monthlyCoordinators"></div></div>
+        <div class="panel insight-panel">
+          <div class="section-head"><div><p class="eyebrow">Editable executive analysis</p><h2>AI Insights & Recommendations</h2></div></div>
+          <div class="button-row"><button class="secondary-btn insight-action" data-scope="monthly" data-kind="insights">Generate Insights</button><button class="secondary-btn insight-action" data-scope="monthly" data-kind="recommendations">Generate Recommendations</button><button class="primary-btn insight-action" data-scope="monthly" data-kind="both">Generate Both</button><button class="dark-btn insight-action" data-scope="monthly" data-kind="both">Regenerate</button></div>
+          <label>Insights<textarea id="monthlyInsights" rows="5"></textarea></label>
+          <label>Recommendations<textarea id="monthlyRecommendations" rows="5"></textarea></label>
+          <label>Strategic Commentary<textarea id="commentary" rows="4">Protect service consistency while scaling call handling capacity.</textarea></label>
+        </div>
+      </div>
+      <div class="panel font-settings-panel" data-font-panel="monthly"></div>
+      <div class="section-title"><div><p class="eyebrow">Preview before download</p><h2>Monthly Save & Download Actions</h2></div><div class="button-row"><button class="secondary-btn" id="previewMonthly">Preview Monthly PPTX</button><button class="primary-btn" id="downloadMonthly">Download Monthly PPTX</button><button class="dark-btn" id="saveMonthly">Save Monthly Report</button></div></div>
+    </section>
+
+    <section class="page" id="archive">
+      <div class="hero"><div><p class="eyebrow">Document filing cabinet</p><h1>Archive</h1><p>Browse imported source files, generated PPTX files, generated reports, and deleted-file records.</p></div><button class="secondary-btn" id="clearArchive">Clear Archive</button></div>
+      <div class="archive-stats" id="archiveStats"></div>
+      <div class="panel">
+        <div class="section-head"><div><p class="eyebrow">File manager</p><h2>Archive Filing System</h2></div></div>
+        <div class="archive-toolbar">
+          <label>Search<input id="archiveSearch" type="search" placeholder="Search file, uploader, period, or status"></label>
+          <label>Date From<input id="archiveDateFrom" type="date"></label>
+          <label>Date To<input id="archiveDateTo" type="date"></label>
+          <label>File Type<select id="archiveTypeFilter"><option value="">All file types</option><option>CDR Files</option><option>Timetables</option><option>Failed Order Reports</option><option>Weekly PPTX</option><option>Monthly PPTX</option><option>Weekly Reports</option><option>Monthly Reports</option><option>CSV Analytics Reports</option><option>Deleted Files</option></select></label>
+          <label>Report Period<select id="archivePeriodFilter"><option value="">All periods</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="daily">Daily</option><option value="source">Source</option></select></label>
+          <label class="legacy-shift-filter">Shift<select id="archiveShiftFilter"><option value="">All shifts</option><option>Morning Shift</option><option>Evening Shift</option><option>Night Monitoring</option></select></label>
+        </div>
+        <div id="archiveFolders" class="archive-folder-grid"></div>
+        <div class="archive-list" id="archiveList"></div>
+        <div id="sourceArchiveList" class="source-archive-list role-hidden"></div>
+      </div>
+    </section>
+
+    <section class="page admin-only" id="import-center">
+      <div class="hero"><div><p class="eyebrow">Admin source control</p><h1>Import Centre</h1><p>Upload operational source files used for reports, analytics, and PPTX generation.</p></div></div>
+      <div class="import-hub-grid">
+        <div class="panel import-hub-card cdr-upload-card" data-import-card="cdr">
+          <div class="section-head"><div><p class="eyebrow">Call records</p><h2>CDR CSV Upload</h2></div></div>
+          <div id="importCdrStatus" class="import-card-status"></div>
+          <div class="button-row"><button class="primary-btn" id="linkusFileButton" type="button">Upload CDR CSV</button><button class="secondary-btn" id="replaceCdrFileButton" type="button">Replace File</button></div>
+          <input id="linkusFile" type="file" accept=".csv" multiple hidden>
+        </div>
+        <div class="panel import-hub-card timetable-upload-card" data-import-card="timetable">
+          <div class="section-head"><div><p class="eyebrow">Shift assignment source</p><h2>Timetable Upload</h2></div></div>
+          <div id="timetableSummary" class="import-card-status"></div>
+          <div class="button-row"><button class="primary-btn" id="timetableFileButton" type="button">Upload Timetable</button><button class="secondary-btn" id="replaceTimetableFileButton" type="button">Replace File</button></div>
+          <input id="timetableFile" type="file" accept=".csv,.xlsx,.xls" hidden>
+        </div>
+        <div class="panel import-hub-card failed-report-portal" data-import-card="failed-orders">
+          <div class="section-head"><div><p class="eyebrow">Service recovery source</p><h2>Failed Orders Report Upload</h2></div></div>
+          <div id="importOrderStatus" class="import-card-status"></div>
+          <div class="button-row"><button class="primary-btn" id="orderReportFileButton" type="button">Upload Failed Orders Report</button><button class="secondary-btn" id="replaceOrderReportFileButton" type="button">Replace File</button></div>
+          <input id="orderReportFile" type="file" accept=".csv,.xlsx,.xls" hidden>
+        </div>
+      </div>
+    </section>
+
+    <section class="page csv-access" id="linkus-import">
+      <div class="hero cdr-hero"><div><p class="eyebrow">CDR service KPIs + operational intelligence</p><h1>Call Centre Analytics Dashboard</h1><p>The selected CS queue controls service KPIs. Uploads now live in Admin Import Centre; this page is for analysis.</p></div></div>
+      <div class="panel import-center-controls cdr-filter-bar">
+        <div class="section-head"><div><p class="eyebrow">Choose analysis scope</p><h2>Analyze Current View</h2></div><span id="linkusImportStatus" class="pull-status">Ready</span></div>
+        <div class="import-control-grid">
+          <label>Dataset<select id="csvArchiveSelect"><option value="">All imported CSVs</option></select></label>
+          <label>Start Date<input id="csvStartDate" type="date"></label>
+          <label>End Date<input id="csvEndDate" type="date"></label>
+          <label>Communication Type<select id="csvCommunication"><option value="">All types</option><option value="inbound">Inbound</option><option value="outbound">Outbound</option><option value="internal">Internal</option></select></label>
+          <label>Agent<select id="csvAgent"><option value="">All active agents</option></select></label>
+          <label>Queue / Ring Group<input id="csvQueue" placeholder="All queues and groups"></label>
+          <label class="official-queue-select">Active Call Queue<select id="officialCsQueue" required><option value="">Select active call queue</option></select></label>
+          <label>Last Status<select id="csvStatus"><option value="">All statuses</option><option value="answered">Answered</option><option value="abandoned">Abandoned</option><option value="no answer">No Answer</option><option value="busy">Busy</option><option value="failed">Failed</option></select></label>
+          <label>Direction<select id="csvDirection"><option value="">All directions</option><option value="inbound">Inbound</option><option value="outbound">Outbound</option><option value="internal">Internal</option></select></label>
+          <label>Caller Group<select id="csvContactType"><option value="">All caller groups</option><option>CUSTOMER</option><option>AGENT</option><option>CRM BOT</option><option>INTERNAL</option><option>UNKNOWN</option></select></label>
+          <label>Hour<select id="csvHour"><option value="">All hours</option></select></label>
+        </div>
+        <div class="button-row import-center-actions">
+          <button class="primary-btn" id="csvAnalyze" type="button">Analyze</button>
+          <button class="secondary-btn" id="csvResetFilters" type="button">Reset Filters</button>
+          <button class="secondary-btn" id="csvExportFiltered" type="button">Export Current View</button>
+          <button class="dark-btn" id="csvGenerateWeekly" type="button">Use for Weekly</button>
+          <button class="dark-btn" id="csvGenerateMonthly" type="button">Use for Monthly</button>
+          <button class="secondary-btn admin-only" id="csvMerge" type="button">Merge Selected CSVs</button>
+        </div>
+      </div>
+      <div class="panel data-diagnostics-panel"><div class="section-head"><div><p class="eyebrow">Import verification</p><h2>Data Diagnostics</h2></div></div><div id="dataDiagnostics" class="data-diagnostics"></div></div>
+      <details class="cdr-section executive-section" open><summary><span>01</span><div><p class="eyebrow">Executive Summary</p><h2>What happened?</h2></div><b class="collapse-label"></b></summary><div id="officialQueueWarning"></div><div id="csvAnalysisCards" class="csv-analysis-cards"></div><div id="csvSmartSummary" hidden></div></details>
+      <div class="csv-insight-grid" id="csvInsightCards"></div>
+      <div class="legacy-analysis-sinks" hidden>
+        <div id="csvBestAgent"></div><table id="csvAgentTable"></table><div id="csvAgentDetail"></div>
+        <div id="csvPerformanceCharts"></div><div id="csvPressureCharts"></div><div id="csvRoutingCharts"></div>
+        <div id="csvSegmentCards"></div><div id="csvSegmentCharts"></div><div id="csvRiskAlerts"></div><div id="csvFailedOrders"></div>
+        <div id="csvShiftCharts"></div><div id="csvMissedCharts"></div><div id="csvAbandonmentCharts"></div>
+        <div id="csvForecasting"></div><div id="csvExecutiveInsights"></div><div id="csvDrilldowns"></div><div id="csvDrilldownDetail"></div>
+      </div>
+      <div class="panel csv-raw-panel" hidden>
+        <div class="section-head"><div><p class="eyebrow">Filtered source records</p><h2>Source Preview</h2></div><span id="linkusPreviewCount">0 records</span></div>
+        <div class="raw-tools">
+          <input id="csvTableSearch" type="search" placeholder="Search filtered records">
+          <label>Rows<select id="csvPageSize"><option>25</option><option>50</option><option selected>100</option></select></label>
+          <button class="secondary-btn" id="csvToggleColumns" type="button">Columns</button>
+        </div>
+        <div id="csvColumnPicker" class="column-picker"></div>
+        <div class="import-table-wrap"><table class="import-table" id="linkusPreviewTable"><tbody><tr><td>No CSV data uploaded yet.</td></tr></tbody></table></div>
+        <div class="csv-pagination"><button class="secondary-btn" id="csvPrevPage" type="button">Previous</button><span id="csvPageStatus">Page 1</span><button class="secondary-btn" id="csvNextPage" type="button">Next</button></div>
+      </div>
+      <div class="panel csv-archive-panel">
+        <div class="section-head"><div><p class="eyebrow">Available CDR datasets</p><h2>Analysis Batches</h2></div></div>
+        <div id="csvArchiveList" class="csv-archive-list"></div>
+      </div>
+    </section>
+
+    <section class="page admin-only" id="settings">
+      <div class="settings-admin-shell">
+        <header class="settings-admin-top">
+          <div>
+            <p class="eyebrow">Admin</p>
+            <h1>Settings</h1>
+          </div>
+          <div class="settings-profile">
+            <button class="settings-bell" type="button" aria-label="Notifications">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </button>
+            <span class="settings-avatar" id="settingsAvatar">P</span>
+            <div>
+              <strong id="settingsProfileName">Admin</strong>
+              <small id="settingsProfileRole">Admin</small>
+            </div>
+          </div>
+        </header>
+
+        <section class="settings-panel user-management-panel">
+          <div class="settings-panel-head"><div><p class="eyebrow">Users</p><h2>User Management</h2></div></div>
+          <div class="settings-user-toolbar">
+            <label>Email<input id="userEmailFilter" type="search" placeholder="Search email"></label>
+            <label>Role<select id="userRoleFilter"><option value="">All roles</option><option>Admin</option><option>User</option></select></label>
+          </div>
+          <div class="user-table-wrap">
+            <table class="user-table">
+              <thead><tr><th>Email</th><th>Role</th><th>Last Updated</th><th>Actions</th></tr></thead>
+              <tbody id="userList"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="settings-panel">
+          <div class="settings-panel-head"><div><p class="eyebrow">Access</p><h2>Add or Update User</h2></div></div>
+          <form class="user-form" id="userForm">
+            <label>Email<input id="newUsername" type="email" placeholder="name@piki.co.tz" required></label>
+            <label>Password<input id="newPassword" type="password" required></label>
+            <label>Role<select id="newRole"><option>User</option><option>Admin</option></select></label>
+            <button class="primary-btn" type="submit">Save User</button>
+          </form>
+        </section>
+
+        <section class="settings-panel ai-settings-panel">
+          <div class="settings-panel-head"><div><p class="eyebrow">PPTX</p><h2>AI Summary Settings</h2></div><span id="aiSessionStatus" class="pull-status">Not connected</span></div>
+          <div class="ai-settings-form">
+            <label>AI API Key<input id="openAiApiKey" type="password" autocomplete="off" placeholder="Paste an OpenAI or OpenRouter key here for this session"></label>
+            <div class="button-row">
+              <button class="primary-btn" id="saveAiSession" type="button">Save For This Session Only</button>
+              <button class="secondary-btn" id="testAiConnection" type="button">Test AI Connection</button>
+              <button class="secondary-btn" id="clearAiSession" type="button">Clear AI Session</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <div class="modal import-modal" id="importModal" aria-hidden="true">
+    <div class="import-shell">
+      <div class="section-head"><div><p class="eyebrow">Review before saving</p><h2 id="importTitle">Imported Data Preview</h2></div><button class="icon-btn" id="closeImport" type="button">×</button></div>
+      <div class="import-table-wrap"><table class="import-table" id="importTable"></table></div>
+      <div class="button-row"><button class="primary-btn" id="importSelected" type="button">Import Selected Data</button><button class="secondary-btn" id="cancelImport" type="button">Cancel Import</button></div>
+    </div>
+  </div>
+  <div class="modal import-modal" id="csvMappingModal" aria-hidden="true">
+    <div class="import-shell mapping-shell">
+      <div class="section-head"><div><p class="eyebrow">Review before mapping</p><h2 id="csvMappingTitle">Use CSV Data</h2></div><button class="icon-btn" id="closeCsvMapping" type="button">×</button></div>
+      <div id="csvMappingSummary" class="mapping-summary"></div>
+      <p class="helper-copy">Call metrics will be mapped from the filtered CSV. Coordinator manual fields and operational notes remain separate.</p>
+      <div class="button-row"><button class="primary-btn" id="confirmCsvMapping" type="button">Confirm Mapping</button><button class="secondary-btn" id="cancelCsvMapping" type="button">Cancel</button></div>
+    </div>
+  </div>
+  <div class="modal" id="previewModal" aria-hidden="true">
+    <div class="modal-shell">
+      <div class="modal-head">
+        <div><p class="eyebrow">PPTX preview</p><h2 id="modalTitle">Report Preview</h2></div>
+        <div class="preview-controls">
+          <button class="icon-btn" id="previousSlide" aria-label="Previous slide">‹</button>
+          <strong id="slideCounter">1 / 5</strong>
+          <button class="icon-btn" id="nextSlide" aria-label="Next slide">›</button>
+          <button class="icon-btn close-preview" id="closeModal" aria-label="Close preview">×</button>
+        </div>
+      </div>
+      <div class="preview-stage"><div class="modal-content" id="modalSlides"></div></div>
+      <div class="preview-filmstrip" id="previewFilmstrip"></div>
+    </div>
+  </div>
+  <div class="app-credit">Developed with &#10084;&#65039; by Evans Macmillan</div>
+  <script src="app.js"></script>
+</body>
+</html>
