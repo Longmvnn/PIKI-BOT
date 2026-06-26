@@ -1,11 +1,21 @@
 const AGENTS=["Amani","Anastazia","Janeth","Evans","John","Juliana","Laura","Maureen","Niceler","Regalister","Steward","Samson"];
 const SESSION_KEY="piki-call-centre-session";
 const AI_SESSION_KEY="piki-openai-session";
-const SUPABASE_CONFIG=window.PIKI_SUPABASE_ENV||{};
-const SUPABASE_URL=String(SUPABASE_CONFIG.supabaseUrl||"").replace(/\/$/,"");
-const SUPABASE_ANON_KEY=String(SUPABASE_CONFIG.supabaseAnonKey||"");
-const SUPABASE_STATE_TABLE=SUPABASE_CONFIG.supabaseStateTable||"report_settings";
-const SUPABASE_STORAGE_BUCKET=SUPABASE_CONFIG.supabaseStorageBucket||"generated-reports";
+const SUPABASE_CONFIG=window.PIKI_SUPABASE_ENV||window.__PIKI_SUPABASE_ENV__||window.__ENV__||{};
+const SUPABASE_URL=String(
+  SUPABASE_CONFIG.supabaseUrl||
+  SUPABASE_CONFIG.VITE_SUPABASE_URL||
+  SUPABASE_CONFIG.SUPABASE_URL||
+  ""
+).replace(/\/$/,"").replace(/\/rest\/v1$/,"");
+const SUPABASE_ANON_KEY=String(
+  SUPABASE_CONFIG.supabaseAnonKey||
+  SUPABASE_CONFIG.VITE_SUPABASE_ANON_KEY||
+  SUPABASE_CONFIG.SUPABASE_ANON_KEY||
+  ""
+);
+const SUPABASE_STATE_TABLE=SUPABASE_CONFIG.supabaseStateTable||SUPABASE_CONFIG.SUPABASE_STATE_TABLE||"report_settings";
+const SUPABASE_STORAGE_BUCKET=SUPABASE_CONFIG.supabaseStorageBucket||SUPABASE_CONFIG.SUPABASE_STORAGE_BUCKET||"generated-reports";
 const APPROVED_EMAILS=["laura.kayega@piki.co.tz","maureen.makala@piki.co.tz","juliana.mkillaha@piki.co.tz","masumba.gamuya@piki.co.tz","anastazia.tindo@piki.co.tz","evans.macmillan@piki.co.tz","samuel.henry@piki.co.tz","amani.william@piki.co.tz","steward.stanley@piki.co.tz","regalister.seho@piki.co.tz","john.mwambene@piki.co.tz"];
 const ADMIN_EMAILS=["evans.macmillan@piki.co.tz","samuel.henry@piki.co.tz"];
 const ACCOUNT_SETUP_VERSION=2;
